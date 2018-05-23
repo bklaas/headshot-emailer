@@ -1,7 +1,15 @@
+"""headshot_emailer.py
+    Reads a spreadsheet of names, attendee numbers
+    (which are also image names), and email addresses.
+    Uses yagmail, a library specific for interacting with
+    gmail's SMTP server, to send a specific, custom email
+    and attachment to each email address.
+"""
 import yagmail
 import pandas as pd
 import sys
 
+sys.exit
 df = pd.read_csv("BenTest.csv")
 cols_needed = ['ATTENDEE_NUM', 'LAST', 'FIRST', 'EMAIL']
 
