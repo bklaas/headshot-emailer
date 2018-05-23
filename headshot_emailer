@@ -1,0 +1,4 @@
+#!/bin/bash
+
+source activate emailer
+python headshot_emailer.py
