@@ -1,4 +1,9 @@
 #!/bin/bash
 
+# bash wrapper to headshot_emailer.py so
+# script is called inside emailer conda env,
+# which includes all dependencies
+
 source activate emailer
-python headshot_emailer.py
+python headshot_emailer.py "$@"
+

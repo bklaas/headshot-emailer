@@ -7,20 +7,50 @@
 """
 import yagmail
 import pandas as pd
+
+from pathlib import Path
+import argparse
 import sys
 
-sys.exit
-df = pd.read_csv("BenTest.csv")
-cols_needed = ['ATTENDEE_NUM', 'LAST', 'FIRST', 'EMAIL']
+mailing_list = "mailing_list.csv"
 
-all_there = all(col in df.columns for col in cols_needed)
-if not all_there:
-    print("ERROR!")
-    print("Missing column in your spreadsheet. Make sure these are all present:")
-    print(cols_needed)
+def warn_and_exit(msg_list):
+    print("ERROR!", msg_list)
     sys.exit()
-    
-df = df[cols_needed]
+
+def get_opts():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Automated headshot emailer")
+    parser.add_argument('imagedir')
+    parser.add_argument(
+        '-d', '--dry_run', action='store_true', dest='dryrun',
+        required=False, default=False,
+        help="Don't send the email, just display what would have happened."
+    )
+    parser.add_argument(
+        '-f', '--file', action='store', dest='mailing_list',
+        required=False, default=mailing_list,
+        help="Specify alternate location of mailing list spreadsheet. Default: " + mailing_list + " (in imagedir)"
+    )
+    return parser.parse_args()
+
+def get_list(opts):
+    """Read the mailing list, confirm it exists and has correct columns."""
+    if not Path(opts.mailing_list).exists():
+        warn_and_exit("Could not find", str(Path(opts.mailing_list)))
+
+    df = pd.read_csv(opts.mailing_list, dtype=str)
+    df.columns = [col.upper() for col in df.columns]
+    cols_needed = ['ATTENDEE_NUM', 'LAST', 'FIRST', 'EMAIL']
+
+    all_there = all(col in df.columns for col in cols_needed)
+    if not all_there:
+        warn_and_exit("Missing column in your spreadsheet. Required columns:", cols_needed)
+    return df[cols_needed]
+
+opts = get_opts()
+df = get_list(opts)
+
 records = df.to_dict(orient= 'records')
 
 # get an SMTP object
