@@ -101,9 +101,6 @@ sent_email_log = imagedir/sent_email_list
 
 df = get_list(opts)
 records = df.to_dict(orient= 'records')
-for r in records:
-    img_name = r['ATTENDEE_NUM'] + '.jpg'
-    r['IMAGE_PATH'] = imagedir/img_name
 
 # get an SMTP object
 if not opts.dryrun:
@@ -116,15 +113,22 @@ with open("simple.html", 'r') as f:
 # Do NOT send emails to successfully sent email addresses
 already_sent = get_sent_emails()
 
-# for those that need sending, confirm every image exists
-for r in records:
-    if r['EMAIL'] not in already_sent:
-        if not r['IMAGE_PATH'].exists():
-            warn_and_exit("Missing image:" + str(r['IMAGE_PATH']))
+# create a list of records to send emails to
+# 1. is a .jpg
+# 2. image name starts with ATTENDEE_NUM
+# 3. when match is made, add that image path to the record
+to_send_list = []
+pattern = "*.jpg"
+for f in imagedir.glob(pattern):  
+    for r in records:
+        if f.name.startswith(r['ATTENDEE_NUM']):
+            r['IMAGE_PATH'] = f
+            to_send_list.append(r)
+            print(f)
 
 # LOOP through rows and insert dynamic content
-for idx, r in enumerate(records, start=1):
+for idx, r in enumerate(to_send_list, start=1):
     print("--------------------------------------")
-    print("Email", idx, "of", len(records))
+    print("Email", idx, "of", len(to_send_list))
     send_individual_email(r)
 
