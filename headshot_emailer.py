@@ -34,7 +34,7 @@ def get_opts():
     parser.add_argument(
         '-f', '--file', action='store', dest='mailing_list',
         required=False, default=mailing_list,
-        help="Specify alternate location of mailing list spreadsheet. Default: " + mailing_list + " (in imagedir)"
+        help="Specify alternate location of mailing list spreadsheet. Default: " + str(mailing_list) + " (in imagedir)"
     )
     return parser.parse_args()
 
@@ -45,26 +45,26 @@ def get_list(opts):
 
     df = pd.read_excel(mailing_list, dtype=str)
     df.columns = [col.upper() for col in df.columns]
-    cols_needed = ['ATTENDEE_NUM', 'LAST', 'FIRST', 'EMAIL']
+    cols_needed = ['CONFIRMATION NUMBER', 'LAST NAME', 'FIRST NAME', 'EMAIL ADDRESS']
 
     all_there = all(col in df.columns for col in cols_needed)
     if not all_there:
-        warn_and_exit("Missing column in your spreadsheet. Required columns: ", ', '.join(cols_needed))
+        warn_and_exit("Missing column in your spreadsheet. Required columns: " + ', '.join(cols_needed))
     return df[cols_needed]
 
 def send_individual_email(r):
     """If it needs sending, send the email."""
 
-    send_to = r['EMAIL']
+    send_to = r['EMAIL ADDRESS']
     subject='Prototype Automated Email for Sending Headshots'
 
     # if we already sent it, don't do it
     if send_to in already_sent and \
-       already_sent[send_to]['ATTENDEE_NUM'] == r['ATTENDEE_NUM']:
+       already_sent[send_to]['CONFIRMATION NUMBER'] == r['CONFIRMATION NUMBER']:
         print(send_to, "has already received", r['IMAGE_PATH'])
         return
 
-    content = template.format(FIRST=r['FIRST'])
+    content = template.format(FIRST=r['FIRST NAME'])
     print("To:", send_to)
     print("Subject:", subject)
     print("Attachment:", r['IMAGE_PATH'])
@@ -96,24 +96,25 @@ def send_individual_email(r):
 def add_to_sent_log(r):
     # open sent_email_log for append
     with open(str(sent_email_log), 'a') as f:
-        f.write(','.join([r['EMAIL'], r['ATTENDEE_NUM']]))
+        f.write(','.join([r['EMAIL ADDRESS'], r['CONFIRMATION NUMBER']]))
         f.write("\n")
 
 def get_sent_emails():
     if sent_email_log.exists():
         df = pd.read_csv(sent_email_log, header=None)
-        df.columns = ['EMAIL', 'ATTENDEE_NUM']
-        df = df.set_index('EMAIL')
+        df.columns = ['EMAIL ADDRESS', 'CONFIRMATION NUMBER']
+        df = df.set_index('EMAIL ADDRESS')
         return df.to_dict(orient ='index')
     else:
         return {}
     
-mailing_list = "mailing_list.xlsx"
+mailing_list = Path("mailing_list.xlsx")
 sent_email_list = "sent_emails.csv"
 send_from = 'eventmedia@ladenburg.com'
 opts = get_opts()
+if opts.mailing_list:
+    mailing_list = Path(opts.mailing_list)
 imagedir = Path(opts.imagedir)
-mailing_list = imagedir/mailing_list
 sent_email_log = imagedir/sent_email_list
 
 df = get_list(opts)
@@ -124,13 +125,13 @@ already_sent = get_sent_emails()
 
 # create a list of records to send emails to
 # 1. is a .jpg
-# 2. image name starts with ATTENDEE_NUM
+# 2. image name starts with CONFIRMATION NUMBER
 # 3. when match is made, add that image path to the record
 to_send_list = []
 pattern = "*.jpg"
 for f in imagedir.glob(pattern):  
     for r in records:
-        if f.name.startswith(r['ATTENDEE_NUM']):
+        if f.name.startswith(r['CONFIRMATION NUMBER']):
             r['IMAGE_PATH'] = f
             to_send_list.append(r)
 
