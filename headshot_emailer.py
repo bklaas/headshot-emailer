@@ -7,6 +7,7 @@
 import pandas as pd
 
 import smtplib
+import getpass
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -41,7 +42,6 @@ def get_list(opts):
     if not mailing_list.exists():
         warn_and_exit("Could not find " + str(mailing_list))
 
-    # XXX change to excel
     df = pd.read_excel(mailing_list, dtype=str)
     df.columns = [col.upper() for col in df.columns]
     cols_needed = ['ATTENDEE_NUM', 'LAST', 'FIRST', 'EMAIL']
@@ -54,7 +54,6 @@ def get_list(opts):
 def send_individual_email(r):
     """If it needs sending, send the email."""
 
-    send_from = "ben@benklaas.com"
     send_to = r['EMAIL']
     subject='Prototype Automated Email for Sending Headshots'
 
@@ -110,6 +109,7 @@ def get_sent_emails():
     
 mailing_list = "mailing_list.xlsx"
 sent_email_list = "sent_emails.csv"
+send_from = 'eventmedia@ladenburg.com'
 opts = get_opts()
 imagedir = Path(opts.imagedir)
 mailing_list = imagedir/mailing_list
@@ -117,20 +117,6 @@ sent_email_log = imagedir/sent_email_list
 
 df = get_list(opts)
 records = df.to_dict(orient= 'records')
-
-# get an SMTP object
-if not opts.dryrun:
-    #smtp = smtplib.SMTP('smtp.gmail.com', 587)
-    smtp = smtplib.SMTP('smtp.office365.com', 587)
-    smtp.ehlo()
-    ready = smtp.starttls()
-    print(ready)
-    status = smtp.login('eventmedia@ladenburg.com', 'XXXX')
-    print(status)
-
-# pull the contents from the template file
-with open("simple.html", 'r') as f:
-        template = f.read()
 
 # Do NOT send emails to successfully sent email addresses
 already_sent = get_sent_emails()
@@ -146,12 +132,34 @@ for f in imagedir.glob(pattern):
         if f.name.startswith(r['ATTENDEE_NUM']):
             r['IMAGE_PATH'] = f
             to_send_list.append(r)
-            print(f)
+
+if len(to_send_list) > 0:
+    # get an SMTP object
+    if not opts.dryrun:
+        smtpserver = 'smtp.office365.com'
+        smtpport = 587
+        print("Connecting to", smtpserver, "on port", smtpport)
+        smtp = smtplib.SMTP(smtpserver, smtpport)
+        smtp.ehlo()
+        ready = smtp.starttls()
+        print(ready[1])
+
+        pswd = getpass.getpass('Password:')
+        try:
+            status = smtp.login(send_from, pswd)
+            print(str(status[1]))
+        except smtplib.SMTPAuthenticationError as e:
+            print("There was a problem authenticating:")
+            print(str(e))
+            sys.exit()
+
+# pull the contents from the template file
+with open("simple.html", 'r') as f:
+        template = f.read()
 
 # LOOP through rows and insert dynamic content
 for idx, r in enumerate(to_send_list, start=1):
-    if idx == 1:
-        print("--------------------------------------")
-        print("Email", idx, "of", len(to_send_list))
-        send_individual_email(r)
+    print("--------------------------------------")
+    print("Email", idx, "of", len(to_send_list))
+    send_individual_email(r)
 
