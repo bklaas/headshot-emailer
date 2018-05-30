@@ -6,6 +6,7 @@
 """
 import pandas as pd
 
+import time
 import smtplib
 import getpass
 from email.mime.application import MIMEApplication
@@ -161,5 +162,8 @@ with open("simple.html", 'r') as f:
 for idx, r in enumerate(to_send_list, start=1):
     print("--------------------------------------")
     print("Email", idx, "of", len(to_send_list))
+    if not idx % 30:
+        print("Sleeping 1 minute to avoid Office365 failing to send because of 30 emails/minute rule")
+        time.sleep(60)
     send_individual_email(r)
 
