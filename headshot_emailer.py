@@ -18,6 +18,12 @@ from pathlib import Path
 import argparse
 import sys
 
+## Change these as needed
+subject='Securities America Connect: Your Professional Photo is Attached'
+send_from = 'eventmedia@ladenburg.com'
+smtpserver = 'smtp.office365.com'
+smtpport = 587
+
 def warn_and_exit(msg):
     print("ERROR!", msg)
     sys.exit()
@@ -56,7 +62,6 @@ def send_individual_email(r):
     """If it needs sending, send the email."""
 
     send_to = r['EMAIL ADDRESS']
-    subject='Prototype Automated Email for Sending Headshots'
 
     # if we already sent it, don't do it
     if send_to in already_sent and \
@@ -110,7 +115,6 @@ def get_sent_emails():
     
 mailing_list = Path("mailing_list.xlsx")
 sent_email_list = "sent_emails.csv"
-send_from = 'eventmedia@ladenburg.com'
 opts = get_opts()
 if opts.mailing_list:
     mailing_list = Path(opts.mailing_list)
@@ -138,8 +142,6 @@ for f in imagedir.glob(pattern):
 if len(to_send_list) > 0:
     # get an SMTP object
     if not opts.dryrun:
-        smtpserver = 'smtp.office365.com'
-        smtpport = 587
         print("Connecting to", smtpserver, "on port", smtpport)
         smtp = smtplib.SMTP(smtpserver, smtpport)
         smtp.ehlo()
