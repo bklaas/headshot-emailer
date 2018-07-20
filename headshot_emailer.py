@@ -31,7 +31,9 @@ def warn_and_exit(msg):
 def get_opts():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Automated headshot emailer")
+    parser.add_argument('subject')
     parser.add_argument('imagedir')
+    parser.add_argument('htmlfile')
     parser.add_argument(
         '-d', '--dry_run', action='store_true', dest='dryrun',
         required=False, default=False,
