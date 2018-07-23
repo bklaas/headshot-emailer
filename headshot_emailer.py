@@ -9,6 +9,7 @@ import pandas as pd
 import time
 import smtplib
 import getpass
+import configparser
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -19,7 +20,6 @@ import argparse
 import sys
 
 ## Change these as needed
-subject='Securities America Connect: Your Professional Photo is Attached'
 send_from = 'eventmedia@ladenburg.com'
 smtpserver = 'smtp.office365.com'
 smtpport = 587
@@ -31,9 +31,10 @@ def warn_and_exit(msg):
 def get_opts():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Automated headshot emailer")
-    parser.add_argument('subject')
-    parser.add_argument('imagedir')
-    parser.add_argument('htmlfile')
+    parser.add_argument('imagedir', action='store',
+                        help="Name of directory where headshots for this run are stored")
+    parser.add_argument('--conference', action='store', dest='conference',
+                        help="Name of conference, with specifics mapped out in config.ini")
     parser.add_argument(
         '-d', '--dry_run', action='store_true', dest='dryrun',
         required=False, default=False,
@@ -71,6 +72,7 @@ def send_individual_email(r):
         print(send_to, "has already received", r['IMAGE_PATH'])
         return
 
+    subject = config['subject']
     content = template.format(FIRST=r['FIRST NAME'])
     print("To:", send_to)
     print("Subject:", subject)
@@ -115,9 +117,16 @@ def get_sent_emails():
     else:
         return {}
     
+def get_config(c):
+    config = configparser.ConfigParser()
+    config_file = config.read("config.ini")
+    return {k: v for k, v in config[c].items()}
+
 mailing_list = Path("mailing_list.xlsx")
 sent_email_list = "sent_emails.csv"
 opts = get_opts()
+config = get_config(opts.conference)
+
 if opts.mailing_list:
     mailing_list = Path(opts.mailing_list)
 imagedir = Path(opts.imagedir)
@@ -160,7 +169,7 @@ if len(to_send_list) > 0:
             sys.exit()
 
 # pull the contents from the template file
-with open("simple.html", 'r') as f:
+with open(config['htmlfile'], 'r') as f:
         template = f.read()
 
 # LOOP through rows and insert dynamic content
