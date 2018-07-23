@@ -42,8 +42,8 @@ def get_opts():
     )
     parser.add_argument(
         '-f', '--file', action='store', dest='mailing_list',
-        required=False, default=mailing_list,
-        help="Specify alternate location of mailing list spreadsheet. Default: " + str(mailing_list) + " (in imagedir)"
+        required=False, default='mailing_list.xlsx',
+        help="Specify alternate location of mailing list spreadsheet. Default: <conference>_mailing_list.xlsx"
     )
     return parser.parse_args()
 
@@ -122,10 +122,10 @@ def get_config(c):
     config_file = config.read("config.ini")
     return {k: v for k, v in config[c].items()}
 
-mailing_list = Path("mailing_list.xlsx")
 sent_email_list = "sent_emails.csv"
 opts = get_opts()
 config = get_config(opts.conference)
+mailing_list = Path(opts.conference + "_mailing_list.xlsx")
 
 if opts.mailing_list:
     mailing_list = Path(opts.mailing_list)
