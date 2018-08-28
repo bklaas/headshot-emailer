@@ -17,6 +17,7 @@ from email.utils import formatdate
 
 from pathlib import Path
 import argparse
+import csv
 import sys
 
 ## Change these as needed
@@ -59,7 +60,7 @@ def get_list(opts):
     all_there = all(col in df.columns for col in cols_needed)
     if not all_there:
         warn_and_exit("Missing column in your spreadsheet. Required columns: " + ', '.join(cols_needed))
-    return df[cols_needed]
+    return df
 
 def send_individual_email(r):
     """If it needs sending, send the email."""
@@ -99,19 +100,23 @@ def send_individual_email(r):
 
         smtp.sendmail(send_from, send_to, msg.as_string())
 
-        ## attach the image as an attachment
-        add_to_sent_log(r)
+    ## attach the image as an attachment
+    add_to_sent_log(r)
 
 def add_to_sent_log(r):
     # open sent_email_log for append
+    make_headers = False
+    if not sent_email_log.exists():
+        make_headers = True
     with open(str(sent_email_log), 'a') as f:
-        f.write(','.join([r['EMAIL ADDRESS'], r['CONFIRMATION NUMBER']]))
-        f.write("\n")
+        writer = csv.writer(f)
+        if make_headers:
+            writer.writerow([k for k in sorted(r)])
+        writer.writerow([str(r[k]) for k in sorted(r)])
 
 def get_sent_emails():
     if sent_email_log.exists():
-        df = pd.read_csv(sent_email_log, header=None)
-        df.columns = ['EMAIL ADDRESS', 'CONFIRMATION NUMBER']
+        df = pd.read_csv(sent_email_log)
         df = df.set_index('EMAIL ADDRESS')
         return df.to_dict(orient ='index')
     else:
