@@ -95,13 +95,14 @@ def send_individual_email(r):
                     i.read(),
                     Name=r['IMAGE_PATH'].name
                   )
+        ## attach the image as an attachment
         part['Content-Disposition'] = 'attachment; filename="%s"' % r['IMAGE_PATH'].name
         msg.attach(part)
 
         smtp.sendmail(send_from, send_to, msg.as_string())
 
-    ## attach the image as an attachment
-    add_to_sent_log(r)
+        # mark it as sent
+        add_to_sent_log(r)
 
 def add_to_sent_log(r):
     # open sent_email_log for append
