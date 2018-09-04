@@ -1,0 +1,5 @@
+#!/bin/bash
+# wrapper script for Triad2018 conference to invoke headshot emailer
+conf='triadadvisors2018'
+./headshot_emailer "$@" --conference ${conf}
+
