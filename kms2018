@@ -1,0 +1,5 @@
+#!/bin/bash
+# wrapper script for kms2018 conference to invoke headshot emailer
+conf='kms2018'
+./headshot_emailer "$@" --conference ${conf}
+
